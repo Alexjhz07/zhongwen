@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "Zhongwen: Chinese-English Dictionary",
-  "short_name": "Zhongwen",
+  "name": "ZhongwenAnki: Chinese-English Dictionary",
+  "short_name": "ZhongwenAnki",
   "version": "5.15.0",
   "author": "Christian Schiller",
   "homepage_url": "https://github.com/cschiller/zhongwen",
@@ -13,7 +13,7 @@
   },
   "browser_action": {
     "default_icon": "images/zhongwen48.png",
-    "default_title": "Zhongwen Chinese Popup Dictionary"
+    "default_title": "ZhongwenAnki Chinese Popup Dictionary"
   },
   "background": {
     "page": "background.html"
@@ -44,7 +44,7 @@
   ],
   "commands": {
     "_execute_browser_action": {
-      "description": "Enable/Disable Zhongwen"
+      "description": "Enable/Disable ZhongwenAnki"
     }
   },
   "web_accessible_resources": [

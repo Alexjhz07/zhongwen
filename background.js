@@ -332,8 +332,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, callback) {
         case 'add': {
             let json = localStorage['wordlist'];
 
-            let saveFirstEntryOnly = localStorage['saveToWordList'] === 'firstEntryOnly';
-
             let wordlist;
             if (json) {
                 wordlist = JSON.parse(json);
@@ -341,21 +339,45 @@ chrome.runtime.onMessage.addListener(function (request, sender, callback) {
                 wordlist = [];
             }
 
-            for (let i in request.entries) {
+            // Changing specifically for Anki imports
+            // The pinyin will now be part of the definition as one word can have multiple pronunciations
 
-                let entry = {};
-                entry.timestamp = Date.now();
-                entry.simplified = request.entries[i].simplified;
-                entry.traditional = request.entries[i].traditional;
-                entry.pinyin = request.entries[i].pinyin;
-                entry.definition = request.entries[i].definition;
-
-                wordlist.push(entry);
-
-                if (saveFirstEntryOnly) {
-                    break;
-                }
+            if (request.entries.length === 0) {
+                break;
             }
+
+            let entry = {};
+            entry.timestamp = Date.now();
+            entry.simplified = request.entries[0].simplified;
+            entry.traditional = request.entries[0].traditional;
+            entry.pinyin = request.entries[0].pinyin; // Keeping this here for consistency, only the definition will be affected
+            
+            let pinyinToDefinition = new Map();
+
+            // Get a unique set of meanings for each pronunciation
+            for (let i in request.entries) {
+                if (request.entries[i].simplified !== entry.simplified) {
+                    continue;
+                }
+
+                if (pinyinToDefinition.get(request.entries[i].pinyin) === undefined) {
+                    pinyinToDefinition.set(request.entries[i].pinyin, []);
+                }
+
+                pinyinToDefinition.get(request.entries[i].pinyin).push(request.entries[i].definition);
+            }
+
+            let finalizedArray = []
+
+            pinyinToDefinition.forEach((defArray, pinyin) => {
+                finalizedArray.push(pinyin);
+                finalizedArray.push(defArray.join('\n'))
+            });
+
+            entry.definition = finalizedArray.join('\n\n');
+            
+            wordlist.push(entry);
+
             localStorage['wordlist'] = JSON.stringify(wordlist);
 
             tabID = tabIDs['wordlist'];

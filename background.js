@@ -370,8 +370,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, callback) {
             let finalizedArray = []
 
             pinyinToDefinition.forEach((defArray, pinyin) => {
-                finalizedArray.push(pinyin);
                 finalizedArray.push(defArray.join('\n'))
+                finalizedArray.push(pinyin);
             });
 
             entry.definition = finalizedArray.join('\n\n');

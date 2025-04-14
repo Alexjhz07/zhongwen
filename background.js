@@ -374,7 +374,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, callback) {
                 finalizedArray.push(pinyin);
             });
 
-            entry.definition = finalizedArray.join('\n\n');
+            entry.definition = `"${finalizedArray.join('\n\n')}"`;
             
             wordlist.push(entry);
 

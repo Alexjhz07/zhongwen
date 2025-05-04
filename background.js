@@ -364,7 +364,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, callback) {
                     pinyinToDefinition.set(request.entries[i].pinyin, []);
                 }
 
-                pinyinToDefinition.get(request.entries[i].pinyin).push(request.entries[i].definition);
+                pinyinToDefinition.get(request.entries[i].pinyin).push(request.entries[i].definition.replaceAll('"', '""'));
             }
 
             let finalizedArray = []

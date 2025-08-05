@@ -374,29 +374,44 @@ chrome.runtime.onMessage.addListener(function (message) {
 
     if (message.type === 'add') {
         chrome.storage.local.get(['wordList', 'saveToWordList'], data => {
+            if (!Array.isArray(message.entries) || message.entries.length === 0) {
+                return;
+            }
 
             let wordList = data.wordList || [];
 
-            let saveToWordList = data.saveToWordList || globalThis.defaultConfig.saveToWordList;
+            let entry = {};
+            entry.timestamp = Date.now();
+            entry.simplified = message.entries[0].simplified;
+            entry.traditional = message.entries[0].traditional;
+            entry.pinyin = message.entries[0].pinyin;
+
+            let pinyinToDefinition = new Map();
 
             for (let i in message.entries) {
-
-                let entry = {};
-                entry.timestamp = Date.now();
-                entry.simplified = message.entries[i].simplified;
-                entry.traditional = message.entries[i].traditional;
-                entry.pinyin = message.entries[i].pinyin;
-                entry.definition = message.entries[i].definition;
-
-                wordList.push(entry);
-
-                if (saveToWordList === 'firstEntryOnly') {
-                    break;
+                if (message.entries[i].simplified !== entry.simplified) {
+                    continue;
                 }
+
+                if (pinyinToDefinition.get(message.entries[i].pinyin) === undefined) {
+                    pinyinToDefinition.set(message.entries[i].pinyin, []);
+                }
+
+                pinyinToDefinition.get(message.entries[i].pinyin).push(message.entries[i].definition.replaceAll('"', '""'));
             }
+
+            let finalizedArray = []
+
+            pinyinToDefinition.forEach((defArray, pinyin) => {
+                finalizedArray.push(defArray.join('\n'))
+                finalizedArray.push(pinyin);
+            });
+
+            entry.definition = `"${finalizedArray.join('\n\n')}"`;
+            
+            wordList.push(entry);
 
             chrome.storage.local.set({wordList});
         });
     }
 });
-

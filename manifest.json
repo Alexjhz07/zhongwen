@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Zhongwen: Chinese-English Dictionary",
-  "short_name": "Zhongwen",
+  "name": "Zhongwen Anki: Chinese-English Dictionary",
+  "short_name": "Zhongwen Anki",
   "version": "6.3.0",
   "author": "Christian Schiller",
   "homepage_url": "https://github.com/cschiller/zhongwen",
@@ -13,7 +13,7 @@
   },
   "action": {
     "default_icon": "images/zhongwen48.png",
-    "default_title": "Zhongwen Chinese Popup Dictionary"
+    "default_title": "Zhongwen Anki Chinese Popup Dictionary"
   },
   "background": {
     "service_worker": "background.js",

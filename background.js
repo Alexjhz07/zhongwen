@@ -386,6 +386,11 @@ chrome.runtime.onMessage.addListener(function (message) {
             entry.traditional = message.entries[0].traditional;
             entry.pinyin = message.entries[0].pinyin;
 
+            // Word already exists in list
+            if (wordList.some(e => e.simplified === entry.simplified)) {
+                return;
+            }
+
             let pinyinToDefinition = new Map();
 
             for (let i in message.entries) {

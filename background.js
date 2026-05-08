@@ -389,7 +389,7 @@ chrome.runtime.onMessage.addListener(function (message) {
 
             // Word already exists in vocabulary
             // Recall that wordList is temporary up until export
-            if (vocabulary.some(e => e.simplified === entry.simplified)) {
+            if (vocabulary.some(e => e === entry.simplified)) {
                 return;
             }
 
@@ -415,7 +415,7 @@ chrome.runtime.onMessage.addListener(function (message) {
             });
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
-            vocabulary.push(entry);
+            vocabulary.push(entry.simplified);
             wordList.push(entry);
 
             chrome.storage.local.set({wordList, vocabulary});

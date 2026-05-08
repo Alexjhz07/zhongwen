@@ -373,7 +373,7 @@ function createTab(url, tabType) {
 chrome.runtime.onMessage.addListener(function (message) {
 
     if (message.type === 'add') {
-        chrome.storage.local.get(['wordList', 'saveToWordList'], data => {
+        chrome.storage.local.get(['wordList'], data => {
             if (!Array.isArray(message.entries) || message.entries.length === 0) {
                 return;
             }

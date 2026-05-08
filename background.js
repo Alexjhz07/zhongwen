@@ -271,7 +271,8 @@ function search(text) {
 
 async function loadDictionary() {
     let [wordDict, wordIndex, grammarKeywords, vocabKeywords] = await loadDictData();
-    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords);
+    let {vocabulary} = await chrome.storage.local.get('vocabulary') || [];
+    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary);
 }
 
 async function loadDictData() {
@@ -373,18 +374,25 @@ function createTab(url, tabType) {
 chrome.runtime.onMessage.addListener(function (message) {
 
     if (message.type === 'add') {
-        chrome.storage.local.get(['wordList', 'saveToWordList'], data => {
+        chrome.storage.local.get(['wordList', 'vocabulary'], data => {
             if (!Array.isArray(message.entries) || message.entries.length === 0) {
                 return;
             }
 
             let wordList = data.wordList || [];
+            let vocabulary = data.vocabulary || [];
 
             let entry = {};
             entry.timestamp = Date.now();
             entry.simplified = message.entries[0].simplified;
             entry.traditional = message.entries[0].traditional;
             entry.pinyin = message.entries[0].pinyin;
+
+            // Word already exists in vocabulary
+            // Recall that wordList is temporary up until export
+            if (vocabulary.some(e => e === entry.simplified)) {
+                return;
+            }
 
             let pinyinToDefinition = new Map();
 
@@ -408,10 +416,11 @@ chrome.runtime.onMessage.addListener(function (message) {
             });
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
-            
+            vocabulary.push(entry.simplified);
+            dict.addToVocabulary(entry.simplified);
             wordList.push(entry);
 
-            chrome.storage.local.set({wordList});
+            chrome.storage.local.set({wordList, vocabulary});
         });
     }
 });

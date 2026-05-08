@@ -48,11 +48,12 @@
 
 export class ZhongwenDictionary {
 
-    constructor(wordDict, wordIndex, grammarKeywords, vocabKeywords) {
+    constructor(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary) {
         this.wordDict = wordDict;
         this.wordIndex = wordIndex;
         this.grammarKeywords = grammarKeywords;
         this.vocabKeywords = vocabKeywords;
+        this.vocabulary = vocabulary || [];
         this.cache = {};
     }
 
@@ -84,6 +85,10 @@ export class ZhongwenDictionary {
 
     hasVocabKeyword(keyword) {
         return this.vocabKeywords[keyword];
+    }
+
+    addToVocabulary(word) {
+        this.vocabulary.push(word);
     }
 
     wordSearch(word, max) {
@@ -127,7 +132,9 @@ export class ZhongwenDictionary {
                         maxLen = word.length;
                     }
 
-                    entry.data.push([dentry, word]);
+                    let known_word = this.vocabulary.includes(word);
+
+                    entry.data.push([dentry, word, known_word]);
                 }
 
                 word = word.substr(0, word.length - 1);

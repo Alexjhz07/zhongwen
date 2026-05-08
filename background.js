@@ -373,12 +373,13 @@ function createTab(url, tabType) {
 chrome.runtime.onMessage.addListener(function (message) {
 
     if (message.type === 'add') {
-        chrome.storage.local.get(['wordList'], data => {
+        chrome.storage.local.get(['wordList', 'vocabulary'], data => {
             if (!Array.isArray(message.entries) || message.entries.length === 0) {
                 return;
             }
 
             let wordList = data.wordList || [];
+            let vocabulary = data.vocabulary || [];
 
             let entry = {};
             entry.timestamp = Date.now();
@@ -386,8 +387,9 @@ chrome.runtime.onMessage.addListener(function (message) {
             entry.traditional = message.entries[0].traditional;
             entry.pinyin = message.entries[0].pinyin;
 
-            // Word already exists in list
-            if (wordList.some(e => e.simplified === entry.simplified)) {
+            // Word already exists in vocabulary
+            // Recall that wordList is temporary up until export
+            if (vocabulary.some(e => e.simplified === entry.simplified)) {
                 return;
             }
 
@@ -413,10 +415,10 @@ chrome.runtime.onMessage.addListener(function (message) {
             });
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
-            
+            vocabulary.push(entry);
             wordList.push(entry);
 
-            chrome.storage.local.set({wordList});
+            chrome.storage.local.set({wordList, vocabulary});
         });
     }
 });

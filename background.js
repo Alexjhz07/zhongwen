@@ -271,7 +271,8 @@ function search(text) {
 
 async function loadDictionary() {
     let [wordDict, wordIndex, grammarKeywords, vocabKeywords] = await loadDictData();
-    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords);
+    let {vocabulary} = await chrome.storage.local.get('vocabulary') || [];
+    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary);
 }
 
 async function loadDictData() {
@@ -416,6 +417,7 @@ chrome.runtime.onMessage.addListener(function (message) {
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
             vocabulary.push(entry.simplified);
+            dict.addToVocabulary(entry.simplified);
             wordList.push(entry);
 
             chrome.storage.local.set({wordList, vocabulary});

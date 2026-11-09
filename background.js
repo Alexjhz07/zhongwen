@@ -374,23 +374,22 @@ function createTab(url, tabType) {
 chrome.runtime.onMessage.addListener(function (message) {
 
     if (message.type === 'add') {
-        chrome.storage.local.get(['wordList', 'vocabulary'], data => {
+        chrome.storage.local.get(['wordList', 'backlog'], data => {
             if (!Array.isArray(message.entries) || message.entries.length === 0) {
                 return;
             }
 
             let wordList = data.wordList || [];
-            let vocabulary = data.vocabulary || [];
+            let backlog = data.backlog || [];
 
             let entry = {};
             entry.timestamp = Date.now();
             entry.simplified = message.entries[0].simplified;
             entry.traditional = message.entries[0].traditional;
             entry.pinyin = message.entries[0].pinyin;
-
-            // Word already exists in vocabulary
+            // Word already exists in backlog
             // Recall that wordList is temporary up until export
-            if (vocabulary.some(e => e === entry.simplified)) {
+            if (backlog.some(e => e === entry.simplified)) {
                 return;
             }
 
@@ -416,11 +415,11 @@ chrome.runtime.onMessage.addListener(function (message) {
             });
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
-            vocabulary.push(entry.simplified);
-            dict.addToVocabulary(entry.simplified);
+            backlog.push(entry.simplified);
+            dict.addToBacklog(entry.simplified);
             wordList.push(entry);
 
-            chrome.storage.local.set({wordList, vocabulary});
+            chrome.storage.local.set({wordList, vocabulary: backlog});
         });
     }
 });

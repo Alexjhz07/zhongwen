@@ -53,7 +53,7 @@ export class ZhongwenDictionary {
         this.wordIndex = wordIndex;
         this.grammarKeywords = grammarKeywords;
         this.vocabKeywords = vocabKeywords;
-        this.vocabulary = vocabulary || [];
+        this.backlog = vocabulary || [];
         this.cache = {};
     }
 
@@ -87,8 +87,8 @@ export class ZhongwenDictionary {
         return this.vocabKeywords[keyword];
     }
 
-    addToVocabulary(word) {
-        this.vocabulary.push(word);
+    addToBacklog(word) {
+        this.backlog.push(word);
     }
 
     wordSearch(word, max) {
@@ -132,7 +132,7 @@ export class ZhongwenDictionary {
                         maxLen = word.length;
                     }
 
-                    let known_word = this.vocabulary.includes(word);
+                    let known_word = this.backlog.includes(word);
 
                     entry.data.push([dentry, word, known_word]);
                 }

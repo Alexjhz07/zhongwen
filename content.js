@@ -97,12 +97,13 @@ let savedSelEndList = [];
 function enableTab() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', onKeyDown);
+    // document.addEventListener('click', onClick);
 }
 
 function disableTab() {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('keydown', onKeyDown);
-
+    // document.removeEventListener('click', onClick);
     let popup = document.getElementById('zhongwen-window');
     if (popup) {
         popup.parentNode.removeChild(popup);
@@ -110,6 +111,26 @@ function disableTab() {
 
     clearHighlight();
 }
+
+// function onClick(click) {
+//     let entries = [];
+//     for (let j = 0; j < savedSearchResults.length; j++) {
+//         let entry = {
+//             simplified: savedSearchResults[j][0],
+//             traditional: savedSearchResults[j][1],
+//             pinyin: savedSearchResults[j][2],
+//             definition: savedSearchResults[j][3]
+//         };
+//         entries.push(entry);
+//     }
+
+//     chrome.runtime.sendMessage({
+//         'type': 'add',
+//         'entries': entries
+//     });
+
+//     showPopup('Added to word list.<p>Press Alt+W to open word list.', null, -1, -1);
+// }
 
 function onKeyDown(keyDown) {
 
@@ -165,20 +186,20 @@ function onKeyDown(keyDown) {
         }
             break;
 
-        case 71: // 'g'
-            if (config.grammar && savedSearchResults.grammar) {
-                let sel = encodeURIComponent(window.getSelection().toString());
+        // case 71: // 'g'
+        //     if (config.grammar && savedSearchResults.grammar) {
+        //         let sel = encodeURIComponent(window.getSelection().toString());
 
-                // https://resources.allsetlearning.com/chinese/grammar/%E4%B8%AA
-                let allset = 'https://resources.allsetlearning.com/chinese/grammar/' + sel;
+        //         // https://resources.allsetlearning.com/chinese/grammar/%E4%B8%AA
+        //         let allset = 'https://resources.allsetlearning.com/chinese/grammar/' + sel;
 
-                chrome.runtime.sendMessage({
-                    type: 'open',
-                    tabType: 'grammar',
-                    url: allset
-                });
-            }
-            break;
+        //         chrome.runtime.sendMessage({
+        //             type: 'open',
+        //             tabType: 'grammar',
+        //             url: allset
+        //         });
+        //     }
+        //     break;
 
         case 77: // 'm'
             selStartIncrement = 1;
@@ -220,61 +241,61 @@ function onKeyDown(keyDown) {
         }
             break;
 
-        case 83: // 's'
-            {
+        // case 83: // 's'
+        //     {
 
-                // https://www.skritter.com/vocab/api/add?from=Chrome&lang=zh&word=浏览&trad=瀏 覽&rdng=liú lǎn&defn=to skim over; to browse
+        //         // https://www.skritter.com/vocab/api/add?from=Chrome&lang=zh&word=浏览&trad=瀏 覽&rdng=liú lǎn&defn=to skim over; to browse
 
-                let skritter = 'https://skritter.com';
-                if (config.skritterTLD === 'cn') {
-                    skritter = 'https://skritter.cn';
-                }
+        //         let skritter = 'https://skritter.com';
+        //         if (config.skritterTLD === 'cn') {
+        //             skritter = 'https://skritter.cn';
+        //         }
 
-                skritter +=
-                    '/vocab/api/add?from=zhongwen&ref=zhongwen&lang=zh&word=' +
-                    encodeURIComponent(savedSearchResults[0][0]) +
-                    '&trad=' + encodeURIComponent(savedSearchResults[0][1]) +
-                    '&rdng=' + encodeURIComponent(savedSearchResults[0][4]) +
-                    '&defn=' + encodeURIComponent(savedSearchResults[0][3]);
+        //         skritter +=
+        //             '/vocab/api/add?from=zhongwen&ref=zhongwen&lang=zh&word=' +
+        //             encodeURIComponent(savedSearchResults[0][0]) +
+        //             '&trad=' + encodeURIComponent(savedSearchResults[0][1]) +
+        //             '&rdng=' + encodeURIComponent(savedSearchResults[0][4]) +
+        //             '&defn=' + encodeURIComponent(savedSearchResults[0][3]);
 
-                chrome.runtime.sendMessage({
-                    type: 'open',
-                    tabType: 'skritter',
-                    url: skritter
-                });
-            }
-            break;
+        //         chrome.runtime.sendMessage({
+        //             type: 'open',
+        //             tabType: 'skritter',
+        //             url: skritter
+        //         });
+        //     }
+        //     break;
 
-        case 84: // 't'
-            {
-                let sel = encodeURIComponent(
-                    window.getSelection().toString());
+        // case 84: // 't'
+        //     {
+        //         let sel = encodeURIComponent(
+        //             window.getSelection().toString());
 
-                // https://tatoeba.org/eng/sentences/search?from=cmn&to=eng&query=%E8%BF%9B%E8%A1%8C
-                let tatoeba = 'https://tatoeba.org/eng/sentences/search?from=cmn&to=eng&query=' + sel;
+        //         // https://tatoeba.org/eng/sentences/search?from=cmn&to=eng&query=%E8%BF%9B%E8%A1%8C
+        //         let tatoeba = 'https://tatoeba.org/eng/sentences/search?from=cmn&to=eng&query=' + sel;
 
-                chrome.runtime.sendMessage({
-                    type: 'open',
-                    tabType: 'tatoeba',
-                    url: tatoeba
-                });
-            }
-            break;
+        //         chrome.runtime.sendMessage({
+        //             type: 'open',
+        //             tabType: 'tatoeba',
+        //             url: tatoeba
+        //         });
+        //     }
+        //     break;
 
-        case 86: // 'v'
-            if (config.vocab && savedSearchResults.vocab) {
-                let sel = encodeURIComponent(window.getSelection().toString());
+        // case 86: // 'v'
+        //     if (config.vocab && savedSearchResults.vocab) {
+        //         let sel = encodeURIComponent(window.getSelection().toString());
 
-                // https://resources.allsetlearning.com/chinese/vocabulary/%E4%B8%AA
-                let allset = 'https://resources.allsetlearning.com/chinese/vocabulary/' + sel;
+        //         // https://resources.allsetlearning.com/chinese/vocabulary/%E4%B8%AA
+        //         let allset = 'https://resources.allsetlearning.com/chinese/vocabulary/' + sel;
 
-                chrome.runtime.sendMessage({
-                    type: 'open',
-                    tabType: 'vocab',
-                    url: allset
-                });
-            }
-            break;
+        //         chrome.runtime.sendMessage({
+        //             type: 'open',
+        //             tabType: 'vocab',
+        //             url: allset
+        //         });
+        //     }
+        //     break;
 
         case 88: // 'x'
             altView = 0;
@@ -731,7 +752,7 @@ function showPopup(html, elem, x, y, looseWidth) {
     // (-1, -1) indicates: leave position unchanged
     if (x !== -1 && y !== -1) {
         popup.style.left = x + 'px';
-        popup.style.top = y + 'px';
+        popup.style.top = y + 5 + 'px';
         popup.style.display = '';
     }
 }

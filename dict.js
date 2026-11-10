@@ -93,6 +93,13 @@ export class ZhongwenDictionary {
         this.backlog.push(word);
     }
 
+    removeFromBacklog(word) {
+        const backlogIndex = this.backlog.indexOf(word);
+        if (backlogIndex !== -1) {
+            this.backlog.splice(backlogIndex, 1);
+        }
+    }
+
     addToVocab(word) {
         const backlogIndex = this.backlog.indexOf(word);
         if (backlogIndex !== -1) {

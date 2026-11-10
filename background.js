@@ -450,5 +450,22 @@ chrome.runtime.onMessage.addListener(function (message) {
 
             chrome.storage.local.set({backlog, vocabulary, vocabList});
         });
+    } else if (message.type === 'removeBacklog') {
+        chrome.storage.local.get(['backlog'], data => {
+            let backlog = data.backlog || [];
+
+            for (let i = 0; i < message.selected.length; i++) {
+                let simplified = message.selected[i].simplified
+
+                let backlogIndex = backlog.indexOf(simplified);
+                if (backlogIndex !== -1) {
+                    backlog.splice(backlogIndex, 1);
+                }
+
+                dict.removeFromBacklog(simplified)
+            }
+
+            chrome.storage.local.set({backlog});
+        })
     }
 });

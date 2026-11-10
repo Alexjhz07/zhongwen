@@ -212,6 +212,17 @@ $(document).ready(function () {
     });
 
     $('#delete').click(function () {
+        let selected = table.rows('.bg-info').data();
+
+        if (selected.length === 0) {
+            return;
+        }
+
+        chrome.runtime.sendMessage({
+            type: 'removeBacklog',
+            selected: selected
+        });
+
         table.rows('.bg-info').remove();
 
         entries = table.rows().data().draw(true);

@@ -144,9 +144,17 @@ export class ZhongwenDictionary {
                         maxLen = word.length;
                     }
 
-                    let known_word = this.backlog.includes(word);
+                    let known_status = 0 // Unknown word
 
-                    entry.data.push([dentry, word, known_word]);
+                    if (this.vocabulary.includes(word)) { // Vocab word
+                        known_status = 3
+                    } else if (this.backlog.includes(word)) { // Backlog word
+                        known_status = 2
+                    } else if ([...word].every(char => this.knownChars.includes(char))) { // Latent known word
+                        known_status = 1
+                    }
+
+                    entry.data.push([dentry, word, known_status]);
                 }
 
                 word = word.substr(0, word.length - 1);

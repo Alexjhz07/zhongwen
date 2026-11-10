@@ -873,7 +873,7 @@ function copyToClipboard(data) {
 function makeHtml(result, showToneColors) {
 
     let entry;
-    let known_word;
+    let known_status;
     let html = '';
     let texts = [];
     let hanziClass;
@@ -882,7 +882,7 @@ function makeHtml(result, showToneColors) {
 
     for (let i = 0; i < result.data.length; ++i) {
         entry = result.data[i][0].match(/^([^\s]+?)\s+([^\s]+?)\s+\[(.*?)\]?\s*\/(.+)\//);
-        known_word = result.data[i][2];
+        known_status = result.data[i][2];
         if (!entry) continue;
 
         // Hanzi
@@ -921,8 +921,12 @@ function makeHtml(result, showToneColors) {
 
         // Known Word Indicator
         
-        if (known_word) {
-            html += '&nbsp;&nbsp;&nbsp;<span style="color: green;">KNOWN WORD</span>';
+        if (known_status == 3) {
+            html += '&nbsp;&nbsp;&nbsp;<span style="color: green;">VOCAB</span>';
+        } else if (known_status == 2) {
+            html += '&nbsp;&nbsp;&nbsp;<span style="color: blue;">BACKLOG</span>';
+        } else if (known_status == 1) {
+            html += '&nbsp;&nbsp;&nbsp;<span style="color: yellow;">LATENT</span>';
         }
 
         // Zhuyin

@@ -424,5 +424,31 @@ chrome.runtime.onMessage.addListener(function (message) {
 
             chrome.storage.local.set({wordList, backlog});
         });
+
+    } else if (message.type === 'addVocab') {
+        if (!Array.isArray(message.entries) || message.entries.length === 0) {
+                return;
+            }
+
+        chrome.storage.local.get(['backlog', 'vocabulary', 'vocabList'], data => {
+            let backlog = data.backlog || [];
+            let vocabulary = data.vocabulary || [];
+            let vocabList = data.vocabList || [];
+
+            for (let i in message.entries) {
+                let simplified = message.entries[i].simplified
+
+                let backlogIndex = backlog.indexOf(simplified);
+                if (backlogIndex !== -1) {
+                    backlog.splice(backlogIndex, 1);
+                }
+                
+                vocabulary.push(simplified)
+                vocabList.push(message.entries[i])
+                dict.addToVocab(entries[i].simplified)
+            }
+
+            chrome.storage.local.set({backlog, vocabulary, vocabList});
+        });
     }
 });

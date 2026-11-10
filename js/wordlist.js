@@ -60,12 +60,14 @@ function showListIsEmptyNotice() {
 
 function disableButtons() {
     if (!entries || entries.length === 0) {
-        $('#saveList').prop('disabled', true);
+        $('#exportList').prop('disabled', true);
+        $('#vocabList').prop('disabled', true);
         $('#selectAll').prop('disabled', true);
         $('#deselectAll').prop('disabled', true);
         $('#delete').prop('disabled', true);
     } else {
-        $('#saveList').prop('disabled', false);
+        $('#exportList').prop('disabled', false);
+        $('#vocabList').prop('disabled', false);
         $('#selectAll').prop('disabled', false);
         $('#deselectAll').prop('disabled', false);
         $('#delete').prop('disabled', false);
@@ -154,7 +156,36 @@ $(document).ready(function () {
         chrome.storage.local.set({wordList: copyEntriesForSaving(entries)});
     });
 
-    $('#saveList').click(function () {
+    $('#vocabList').click(function () {
+        let selected = table.rows('.bg-info').data();
+
+        if (selected.length === 0) {
+            return;
+        }
+
+        let entries = []
+
+        for (let i = 0; i < selected.length; i++) {
+            let entry = selected[i];
+            entries.push(entry.simplified)
+        }
+
+        chrome.runtime.sendMessage({
+            type: 'addvocab',
+            entries: entries
+        });
+
+        table.rows('.bg-info').remove();
+
+        entries = table.rows().data().draw(true);
+
+        chrome.storage.local.set({wordList: copyEntriesForSaving(entries)});
+
+        showListIsEmptyNotice();
+        disableButtons();
+    });
+
+    $('#exportList').click(function () {
         let selected = table.rows('.bg-info').data();
 
         if (selected.length === 0) {

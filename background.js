@@ -271,8 +271,8 @@ function search(text) {
 
 async function loadDictionary() {
     let [wordDict, wordIndex, grammarKeywords, vocabKeywords] = await loadDictData();
-    let {vocabulary} = await chrome.storage.local.get('vocabulary') || [];
-    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary);
+    let {backlog, vocabulary} = await chrome.storage.local.get(['backlog', 'vocabulary']) || [];
+    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, backlog, vocabulary);
 }
 
 async function loadDictData() {

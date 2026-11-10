@@ -926,7 +926,7 @@ function makeHtml(result, showToneColors) {
         } else if (known_status == 2) {
             html += '&nbsp;&nbsp;&nbsp;<span style="color: blue;">BACKLOG</span>';
         } else if (known_status == 1) {
-            html += '&nbsp;&nbsp;&nbsp;<span style="color: yellow;">LATENT</span>';
+            html += '&nbsp;&nbsp;&nbsp;<span style="color: darkgrey;">LATENT</span>';
         }
 
         // Zhuyin

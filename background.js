@@ -426,26 +426,26 @@ chrome.runtime.onMessage.addListener(function (message) {
         });
 
     } else if (message.type === 'addVocab') {
-        if (!Array.isArray(message.entries) || message.entries.length === 0) {
-                return;
-            }
+        if (message.selected.length === 0) {
+            return;
+        }
 
         chrome.storage.local.get(['backlog', 'vocabulary', 'vocabList'], data => {
             let backlog = data.backlog || [];
             let vocabulary = data.vocabulary || [];
             let vocabList = data.vocabList || [];
 
-            for (let i in message.entries) {
-                let simplified = message.entries[i].simplified
+            for (let i = 0; i < message.selected.length; i++) {
+                let simplified = message.selected[i].simplified
 
                 let backlogIndex = backlog.indexOf(simplified);
                 if (backlogIndex !== -1) {
                     backlog.splice(backlogIndex, 1);
                 }
                 
+                vocabList.push(message.selected[i])
                 vocabulary.push(simplified)
-                vocabList.push(message.entries[i])
-                dict.addToVocab(entries[i].simplified)
+                dict.addToVocab(simplified)
             }
 
             chrome.storage.local.set({backlog, vocabulary, vocabList});

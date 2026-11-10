@@ -163,16 +163,9 @@ $(document).ready(function () {
             return;
         }
 
-        let entries = []
-
-        for (let i = 0; i < selected.length; i++) {
-            let entry = selected[i];
-            entries.push(entry.simplified)
-        }
-
         chrome.runtime.sendMessage({
-            type: 'addvocab',
-            entries: entries
+            type: 'addVocab',
+            selected: selected
         });
 
         table.rows('.bg-info').remove();

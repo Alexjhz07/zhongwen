@@ -10,45 +10,56 @@
 
 const NOTES_COLUMN = 6;
 
-let wordList;
-
+let wordList = [];
 let showZhuyin;
+let entries = [];
 
-let entries;
+async function loadWordList() {
+    // First, complete migration if necessary.
+    const migrationData = await chrome.storage.local.get([
+        'wordList',
+        '_wl_migrated'
+    ]);
 
-// migration from manifest v2
-chrome.storage.local.get(['wordList', '_wl_migrated'], data => {
-    if (!data._wl_migrated) {
-
+    if (!migrationData._wl_migrated) {
         let v2wordlist = localStorage['wordlist'];
         let migrated = v2wordlist ? JSON.parse(v2wordlist) : [];
 
-        if (data.wordList) {
-            migrated.push(...data.wordList);
+        if (migrationData.wordList) {
+            migrated.push(...migrationData.wordList);
         }
-        chrome.storage.local.set({wordList: migrated, _wl_migrated: true}, () => console.log('wordlist migrated'));
-    }
-});
 
-chrome.storage.local.get(['wordList', 'zhuyin'], data => {
-    wordList = data.wordList;
-    showZhuyin = data.zhuyin || globalThis.defaultConfig.zhuyin;
-
-    if (wordList) {
-        entries = wordList;
-        entries.forEach(e => {
-            e.timestamp = e.timestamp || 0;
-            e.notes = (e.notes || '<i>Edit</i>');
-            e.zhuyin = convert2Zhuyin(e.pinyin);
+        await chrome.storage.local.set({
+            wordList: migrated,
+            _wl_migrated: true
         });
-        // show new entries first
-        entries.sort((e1, e2) => e2.timestamp - e1.timestamp);
-        entries.forEach((e, i) => e.id = i);
-    } else {
-        entries = [];
     }
-});
 
+    // Now load the actual data.
+    const data = await chrome.storage.local.get([
+        'wordList',
+        'zhuyin'
+    ]);
+
+    wordList = data.wordList || [];
+    showZhuyin = data.zhuyin ?? globalThis.defaultConfig.zhuyin;
+
+    entries = wordList.map(e => {
+        return {
+            ...e,
+            timestamp: e.timestamp || 0,
+            notes: e.notes || '<i>Edit</i>',
+            zhuyin: convert2Zhuyin(e.pinyin)
+        };
+    });
+
+    // Show newest entries first.
+    entries.sort((e1, e2) => e2.timestamp - e1.timestamp);
+
+    entries.forEach((e, i) => {
+        e.id = i;
+    });
+}
 
 function showListIsEmptyNotice() {
     if (!entries || entries.length === 0) {
@@ -103,7 +114,15 @@ function copyEntryForSaving(entry) {
     return result;
 }
 
-$(document).ready(function () {
+$(document).ready(async function () {
+
+    try {
+        await loadWordList();
+    } catch (error) {
+        console.error('Failed to load Zhongwen word list:', error);
+        $('#nodata').text('Unable to load your word list. Please refresh the page.').show();
+        return;
+    }
 
     showListIsEmptyNotice();
     disableButtons();

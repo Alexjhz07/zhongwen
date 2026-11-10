@@ -52,6 +52,27 @@ import { ZhongwenDictionary } from './dict.js';
 import './js/config.js';
 
 let dict;
+let dictPromise;
+
+async function getDictionary() {
+    if (dict) {
+        return dict;
+    }
+
+    if (!dictPromise) {
+        dictPromise = loadDictionary()
+            .then(d => {
+                dict = d;
+                return d;
+            })
+            .catch(error => {
+                dictPromise = undefined;
+                throw error;
+            });
+    }
+
+    return dictPromise;
+}
 
 chrome.runtime.onInstalled.addListener(() => {
 
@@ -252,21 +273,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
 });
 
-function search(text) {
-
-    if (!dict) {
-        return loadDictionary().then(d => {
-
-            dict = d;
-
-            return lookup(dict, text);
-
-        });
-    } else {
-        let entry = lookup(dict, text);
-
-        return Promise.resolve(entry);
-    }
+async function search(text) {
+    const dictionary = await getDictionary();
+    return lookup(dictionary, text);
 }
 
 async function loadDictionary() {
@@ -431,46 +440,87 @@ chrome.runtime.onMessage.addListener(function (message) {
         });
 
     } else if (message.type === 'addVocab') {
-        if (message.selected.length === 0) {
+
+        if (!Array.isArray(message.selected) || message.selected.length === 0) {
             return;
         }
 
-        chrome.storage.local.get(['backlog', 'vocabulary', 'vocabList'], data => {
-            let backlog = data.backlog || [];
-            let vocabulary = data.vocabulary || [];
-            let vocabList = data.vocabList || [];
+        getDictionary().then(dictionary => {
 
-            for (let i = 0; i < message.selected.length; i++) {
-                let simplified = message.selected[i].simplified
+            chrome.storage.local.get(
+                ['backlog', 'vocabulary', 'vocabList'],
+                data => {
 
-                let backlogIndex = backlog.indexOf(simplified);
-                if (backlogIndex !== -1) {
-                    backlog.splice(backlogIndex, 1);
+                    let backlog = data.backlog || [];
+                    let vocabulary = data.vocabulary || [];
+                    let vocabList = data.vocabList || [];
+
+                    for (const entry of message.selected) {
+
+                        if (!entry || typeof entry.simplified !== 'string') {
+                            continue;
+                        }
+
+                        const simplified = entry.simplified;
+
+                        let backlogIndex = backlog.indexOf(simplified);
+
+                        if (backlogIndex !== -1) {
+                            backlog.splice(backlogIndex, 1);
+                        }
+
+                        if (!vocabulary.includes(simplified)) {
+                            vocabList.push(entry);
+                            vocabulary.push(simplified);
+                            dictionary.addToVocab(simplified);
+                        }
+                    }
+
+                    chrome.storage.local.set({
+                        backlog,
+                        vocabulary,
+                        vocabList
+                    });
                 }
-                
-                vocabList.push(message.selected[i])
-                vocabulary.push(simplified)
-                dict.addToVocab(simplified)
-            }
+            );
 
-            chrome.storage.local.set({backlog, vocabulary, vocabList});
+        }).catch(error => {
+            console.error('Failed to add vocabulary:', error);
         });
     } else if (message.type === 'removeBacklog') {
-        chrome.storage.local.get(['backlog'], data => {
-            let backlog = data.backlog || [];
 
-            for (let i = 0; i < message.selected.length; i++) {
-                let simplified = message.selected[i].simplified
+        if (!Array.isArray(message.selected)) {
+            return;
+        }
 
-                let backlogIndex = backlog.indexOf(simplified);
-                if (backlogIndex !== -1) {
-                    backlog.splice(backlogIndex, 1);
+        getDictionary().then(dictionary => {
+
+            chrome.storage.local.get(['backlog'], data => {
+
+                let backlog = data.backlog || [];
+
+                for (const entry of message.selected) {
+
+                    if (!entry || typeof entry.simplified !== 'string') {
+                        continue;
+                    }
+
+                    const simplified = entry.simplified;
+
+                    const index = backlog.indexOf(simplified);
+
+                    if (index !== -1) {
+                        backlog.splice(index, 1);
+                    }
+
+                    dictionary.removeFromBacklog(simplified);
                 }
 
-                dict.removeFromBacklog(simplified)
-            }
+                chrome.storage.local.set({backlog});
+            });
 
-            chrome.storage.local.set({backlog});
-        })
+        }).catch(error => {
+            console.error('Failed to remove backlog entries:', error);
+        });
     }
 });

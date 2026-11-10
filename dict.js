@@ -101,13 +101,24 @@ export class ZhongwenDictionary {
     }
 
     addToVocab(word) {
+        if (typeof word !== 'string' || word.length === 0) {
+            console.error('Invalid vocabulary word:', word);
+            return;
+        }
+
         const backlogIndex = this.backlog.indexOf(word);
+
         if (backlogIndex !== -1) {
             this.backlog.splice(backlogIndex, 1);
         }
 
-        this.vocabulary.push(word)
-        this.knownChars = [...new Set([...this.knownChars, ...word])].sort();
+        if (!this.vocabulary.includes(word)) {
+            this.vocabulary.push(word);
+        }
+
+        this.knownChars = [
+            ...new Set([...this.knownChars, ...word])
+        ].sort();
     }
 
     wordSearch(word, max) {

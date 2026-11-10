@@ -176,7 +176,7 @@ $(document).ready(async function () {
     });
 
     $('#vocabList').click(function () {
-        let selected = table.rows('.bg-info').data();
+        let selected = table.rows('.bg-info').data().toArray();
 
         if (selected.length === 0) {
             return;
@@ -198,7 +198,7 @@ $(document).ready(async function () {
     });
 
     $('#exportList').click(function () {
-        let selected = table.rows('.bg-info').data();
+        let selected = table.rows('.bg-info').data().toArray();
 
         if (selected.length === 0) {
             return;

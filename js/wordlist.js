@@ -154,7 +154,6 @@ $(document).ready(async function () {
             $('#rowIndex').val(index);
 
             $('#editNotes').modal('show');
-            $('#notes').focus();
 
             invalidateRow = table.row(this).invalidate;
 
@@ -164,6 +163,10 @@ $(document).ready(async function () {
     });
 
     $('#editNotes').on('shown.bs.modal', () => $('#notes').focus());
+
+    $('#editNotes').on('hidden.bs.modal', function () {
+        $('#words').trigger('focus');
+    });
 
     $('#saveNotes').click(() => {
         let entry = entries[$('#rowIndex').val()];

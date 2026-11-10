@@ -372,6 +372,11 @@ function createTab(url, tabType) {
 }
 
 chrome.runtime.onMessage.addListener(function (message) {
+    if (!dict) {
+        loadDictionary().then(d => {
+            dict = d;
+        });
+    }
 
     if (message.type === 'add') {
         chrome.storage.local.get(['wordList', 'backlog', 'vocabulary'], data => {

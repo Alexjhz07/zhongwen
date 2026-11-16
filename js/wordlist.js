@@ -212,18 +212,8 @@ $(document).ready(async function () {
             let entry = selected[i];
             content += entry.simplified;
             content += '\t';
-            content += entry.traditional;
-            content += '\t';
-            content += entry.pinyin;
-            content += '\t';
-            if (showZhuyin) {
-                content += entry.zhuyin;
-                content += '\t';
-            }
             content += entry.definition;
-            content += '\t';
-            content += entry.notes.replace('<i>Edit</i>', '').replace(/[\r\n]/gm, ' ');
-            content += '\r\n';
+            content += '\n';
         }
 
         let saveBlob = new Blob([content], { "type": "text/plain" });

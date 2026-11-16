@@ -489,8 +489,8 @@ chrome.runtime.onMessage.addListener(function (message) {
         });
     } else if (message.type === 'removeBacklog') {
 
-        if (!Array.isArray(message.selected)) {
-            return;
+        if (message.selected.length == 0) {
+            return
         }
 
         getDictionary().then(dictionary => {
@@ -499,7 +499,8 @@ chrome.runtime.onMessage.addListener(function (message) {
 
                 let backlog = data.backlog || [];
 
-                for (const entry of message.selected) {
+                for (let i = 0; i < message.selected.length; i++) {
+                    const entry = message.selected[i]
 
                     if (!entry || typeof entry.simplified !== 'string') {
                         continue;

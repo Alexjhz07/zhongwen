@@ -10,45 +10,56 @@
 
 const NOTES_COLUMN = 6;
 
-let wordList;
-
+let wordList = [];
 let showZhuyin;
+let entries = [];
 
-let entries;
+async function loadWordList() {
+    // First, complete migration if necessary.
+    const migrationData = await chrome.storage.local.get([
+        'wordList',
+        '_wl_migrated'
+    ]);
 
-// migration from manifest v2
-chrome.storage.local.get(['wordList', '_wl_migrated'], data => {
-    if (!data._wl_migrated) {
-
+    if (!migrationData._wl_migrated) {
         let v2wordlist = localStorage['wordlist'];
         let migrated = v2wordlist ? JSON.parse(v2wordlist) : [];
 
-        if (data.wordList) {
-            migrated.push(...data.wordList);
+        if (migrationData.wordList) {
+            migrated.push(...migrationData.wordList);
         }
-        chrome.storage.local.set({wordList: migrated, _wl_migrated: true}, () => console.log('wordlist migrated'));
-    }
-});
 
-chrome.storage.local.get(['wordList', 'zhuyin'], data => {
-    wordList = data.wordList;
-    showZhuyin = data.zhuyin || globalThis.defaultConfig.zhuyin;
-
-    if (wordList) {
-        entries = wordList;
-        entries.forEach(e => {
-            e.timestamp = e.timestamp || 0;
-            e.notes = (e.notes || '<i>Edit</i>');
-            e.zhuyin = convert2Zhuyin(e.pinyin);
+        await chrome.storage.local.set({
+            wordList: migrated,
+            _wl_migrated: true
         });
-        // show new entries first
-        entries.sort((e1, e2) => e2.timestamp - e1.timestamp);
-        entries.forEach((e, i) => e.id = i);
-    } else {
-        entries = [];
     }
-});
 
+    // Now load the actual data.
+    const data = await chrome.storage.local.get([
+        'wordList',
+        'zhuyin'
+    ]);
+
+    wordList = data.wordList || [];
+    showZhuyin = data.zhuyin ?? globalThis.defaultConfig.zhuyin;
+
+    entries = wordList.map(e => {
+        return {
+            ...e,
+            timestamp: e.timestamp || 0,
+            notes: e.notes || '<i>Edit</i>',
+            zhuyin: convert2Zhuyin(e.pinyin)
+        };
+    });
+
+    // Show newest entries first.
+    entries.sort((e1, e2) => e2.timestamp - e1.timestamp);
+
+    entries.forEach((e, i) => {
+        e.id = i;
+    });
+}
 
 function showListIsEmptyNotice() {
     if (!entries || entries.length === 0) {
@@ -60,12 +71,14 @@ function showListIsEmptyNotice() {
 
 function disableButtons() {
     if (!entries || entries.length === 0) {
-        $('#saveList').prop('disabled', true);
+        $('#exportList').prop('disabled', true);
+        $('#vocabList').prop('disabled', true);
         $('#selectAll').prop('disabled', true);
         $('#deselectAll').prop('disabled', true);
         $('#delete').prop('disabled', true);
     } else {
-        $('#saveList').prop('disabled', false);
+        $('#exportList').prop('disabled', false);
+        $('#vocabList').prop('disabled', false);
         $('#selectAll').prop('disabled', false);
         $('#deselectAll').prop('disabled', false);
         $('#delete').prop('disabled', false);
@@ -101,7 +114,15 @@ function copyEntryForSaving(entry) {
     return result;
 }
 
-$(document).ready(function () {
+$(document).ready(async function () {
+
+    try {
+        await loadWordList();
+    } catch (error) {
+        console.error('Failed to load Zhongwen word list:', error);
+        $('#nodata').text('Unable to load your word list. Please refresh the page.').show();
+        return;
+    }
 
     showListIsEmptyNotice();
     disableButtons();
@@ -133,7 +154,6 @@ $(document).ready(function () {
             $('#rowIndex').val(index);
 
             $('#editNotes').modal('show');
-            $('#notes').focus();
 
             invalidateRow = table.row(this).invalidate;
 
@@ -143,6 +163,10 @@ $(document).ready(function () {
     });
 
     $('#editNotes').on('shown.bs.modal', () => $('#notes').focus());
+
+    $('#editNotes').on('hidden.bs.modal', function () {
+        $('#words').trigger('focus');
+    });
 
     $('#saveNotes').click(() => {
         let entry = entries[$('#rowIndex').val()];
@@ -154,8 +178,30 @@ $(document).ready(function () {
         chrome.storage.local.set({wordList: copyEntriesForSaving(entries)});
     });
 
-    $('#saveList').click(function () {
-        let selected = table.rows('.bg-info').data();
+    $('#vocabList').click(function () {
+        let selected = table.rows('.bg-info').data().toArray();
+
+        if (selected.length === 0) {
+            return;
+        }
+
+        chrome.runtime.sendMessage({
+            type: 'addVocab',
+            selected: selected
+        });
+
+        table.rows('.bg-info').remove();
+
+        entries = table.rows().data().draw(true);
+
+        chrome.storage.local.set({wordList: copyEntriesForSaving(entries)});
+
+        showListIsEmptyNotice();
+        disableButtons();
+    });
+
+    $('#exportList').click(function () {
+        let selected = table.rows('.bg-info').data().toArray();
 
         if (selected.length === 0) {
             return;
@@ -166,18 +212,8 @@ $(document).ready(function () {
             let entry = selected[i];
             content += entry.simplified;
             content += '\t';
-            content += entry.traditional;
-            content += '\t';
-            content += entry.pinyin;
-            content += '\t';
-            if (showZhuyin) {
-                content += entry.zhuyin;
-                content += '\t';
-            }
             content += entry.definition;
-            content += '\t';
-            content += entry.notes.replace('<i>Edit</i>', '').replace(/[\r\n]/gm, ' ');
-            content += '\r\n';
+            content += '\n';
         }
 
         let saveBlob = new Blob([content], { "type": "text/plain" });
@@ -188,6 +224,17 @@ $(document).ready(function () {
     });
 
     $('#delete').click(function () {
+        let selected = table.rows('.bg-info').data();
+
+        if (selected.length === 0) {
+            return;
+        }
+
+        chrome.runtime.sendMessage({
+            type: 'removeBacklog',
+            selected: selected
+        });
+
         table.rows('.bg-info').remove();
 
         entries = table.rows().data().draw(true);

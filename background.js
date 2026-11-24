@@ -52,6 +52,27 @@ import { ZhongwenDictionary } from './dict.js';
 import './js/config.js';
 
 let dict;
+let dictPromise;
+
+async function getDictionary() {
+    if (dict) {
+        return dict;
+    }
+
+    if (!dictPromise) {
+        dictPromise = loadDictionary()
+            .then(d => {
+                dict = d;
+                return d;
+            })
+            .catch(error => {
+                dictPromise = undefined;
+                throw error;
+            });
+    }
+
+    return dictPromise;
+}
 
 chrome.runtime.onInstalled.addListener(() => {
 
@@ -252,27 +273,15 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
 });
 
-function search(text) {
-
-    if (!dict) {
-        return loadDictionary().then(d => {
-
-            dict = d;
-
-            return lookup(dict, text);
-
-        });
-    } else {
-        let entry = lookup(dict, text);
-
-        return Promise.resolve(entry);
-    }
+async function search(text) {
+    const dictionary = await getDictionary();
+    return lookup(dictionary, text);
 }
 
 async function loadDictionary() {
     let [wordDict, wordIndex, grammarKeywords, vocabKeywords] = await loadDictData();
-    let {vocabulary} = await chrome.storage.local.get('vocabulary') || [];
-    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary);
+    let {backlog, vocabulary} = await chrome.storage.local.get(['backlog', 'vocabulary']) || [];
+    return new ZhongwenDictionary(wordDict, wordIndex, grammarKeywords, vocabKeywords, backlog, vocabulary);
 }
 
 async function loadDictData() {
@@ -372,15 +381,21 @@ function createTab(url, tabType) {
 }
 
 chrome.runtime.onMessage.addListener(function (message) {
+    if (!dict) {
+        loadDictionary().then(d => {
+            dict = d;
+        });
+    }
 
     if (message.type === 'add') {
-        chrome.storage.local.get(['wordList', 'vocabulary'], data => {
+        chrome.storage.local.get(['wordList', 'backlog', 'vocabulary'], data => {
             if (!Array.isArray(message.entries) || message.entries.length === 0) {
                 return;
             }
 
             let wordList = data.wordList || [];
-            let vocabulary = data.vocabulary || [];
+            let backlog = data.backlog || [];
+            let vocab = data.vocabulary || [];
 
             let entry = {};
             entry.timestamp = Date.now();
@@ -388,9 +403,10 @@ chrome.runtime.onMessage.addListener(function (message) {
             entry.traditional = message.entries[0].traditional;
             entry.pinyin = message.entries[0].pinyin;
 
+            // Word already exists in backlog OR
             // Word already exists in vocabulary
             // Recall that wordList is temporary up until export
-            if (vocabulary.some(e => e === entry.simplified)) {
+            if (backlog.some(e => e === entry.simplified) || vocab.some(e => e === entry.simplified)) {
                 return;
             }
 
@@ -416,11 +432,96 @@ chrome.runtime.onMessage.addListener(function (message) {
             });
 
             entry.definition = `"${finalizedArray.join('\n\n')}"`;
-            vocabulary.push(entry.simplified);
-            dict.addToVocabulary(entry.simplified);
+            backlog.push(entry.simplified);
+            dict.addToBacklog(entry.simplified);
             wordList.push(entry);
 
-            chrome.storage.local.set({wordList, vocabulary});
+            chrome.storage.local.set({wordList, backlog});
+        });
+
+    } else if (message.type === 'addVocab') {
+
+        if (!Array.isArray(message.selected) || message.selected.length === 0) {
+            return;
+        }
+
+        getDictionary().then(dictionary => {
+
+            chrome.storage.local.get(
+                ['backlog', 'vocabulary', 'vocabList'],
+                data => {
+
+                    let backlog = data.backlog || [];
+                    let vocabulary = data.vocabulary || [];
+                    let vocabList = data.vocabList || [];
+
+                    for (const entry of message.selected) {
+
+                        if (!entry || typeof entry.simplified !== 'string') {
+                            continue;
+                        }
+
+                        const simplified = entry.simplified;
+
+                        let backlogIndex = backlog.indexOf(simplified);
+
+                        if (backlogIndex !== -1) {
+                            backlog.splice(backlogIndex, 1);
+                        }
+
+                        if (!vocabulary.includes(simplified)) {
+                            vocabList.push(entry);
+                            vocabulary.push(simplified);
+                            dictionary.addToVocab(simplified);
+                        }
+                    }
+
+                    chrome.storage.local.set({
+                        backlog,
+                        vocabulary,
+                        vocabList
+                    });
+                }
+            );
+
+        }).catch(error => {
+            console.error('Failed to add vocabulary:', error);
+        });
+    } else if (message.type === 'removeBacklog') {
+
+        if (message.selected.length == 0) {
+            return
+        }
+
+        getDictionary().then(dictionary => {
+
+            chrome.storage.local.get(['backlog'], data => {
+
+                let backlog = data.backlog || [];
+
+                for (let i = 0; i < message.selected.length; i++) {
+                    const entry = message.selected[i]
+
+                    if (!entry || typeof entry.simplified !== 'string') {
+                        continue;
+                    }
+
+                    const simplified = entry.simplified;
+
+                    const index = backlog.indexOf(simplified);
+
+                    if (index !== -1) {
+                        backlog.splice(index, 1);
+                    }
+
+                    dictionary.removeFromBacklog(simplified);
+                }
+
+                chrome.storage.local.set({backlog});
+            });
+
+        }).catch(error => {
+            console.error('Failed to remove backlog entries:', error);
         });
     }
 });

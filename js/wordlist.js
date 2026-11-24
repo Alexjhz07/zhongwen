@@ -211,6 +211,13 @@ $(document).ready(async function () {
         for (let i = 0; i < selected.length; i++) {
             let entry = selected[i];
             content += entry.simplified;
+
+            if (entry.simplified != entry.traditional) {
+                content += ' ('
+                content += entry.traditional
+                content += ")"
+            }
+
             content += '\t';
             content += entry.definition;
             content += '\n';

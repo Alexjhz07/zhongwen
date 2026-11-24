@@ -48,12 +48,14 @@
 
 export class ZhongwenDictionary {
 
-    constructor(wordDict, wordIndex, grammarKeywords, vocabKeywords, vocabulary) {
+    constructor(wordDict, wordIndex, grammarKeywords, vocabKeywords, backlog, vocabulary) {
         this.wordDict = wordDict;
         this.wordIndex = wordIndex;
         this.grammarKeywords = grammarKeywords;
         this.vocabKeywords = vocabKeywords;
+        this.backlog = backlog || [];
         this.vocabulary = vocabulary || [];
+        this.knownChars = [...new Set(this.vocabulary.join(''))].sort();
         this.cache = {};
     }
 
@@ -87,8 +89,36 @@ export class ZhongwenDictionary {
         return this.vocabKeywords[keyword];
     }
 
-    addToVocabulary(word) {
-        this.vocabulary.push(word);
+    addToBacklog(word) {
+        this.backlog.push(word);
+    }
+
+    removeFromBacklog(word) {
+        const backlogIndex = this.backlog.indexOf(word);
+        if (backlogIndex !== -1) {
+            this.backlog.splice(backlogIndex, 1);
+        }
+    }
+
+    addToVocab(word) {
+        if (typeof word !== 'string' || word.length === 0) {
+            console.error('Invalid vocabulary word:', word);
+            return;
+        }
+
+        const backlogIndex = this.backlog.indexOf(word);
+
+        if (backlogIndex !== -1) {
+            this.backlog.splice(backlogIndex, 1);
+        }
+
+        if (!this.vocabulary.includes(word)) {
+            this.vocabulary.push(word);
+        }
+
+        this.knownChars = [
+            ...new Set([...this.knownChars, ...word])
+        ].sort();
     }
 
     wordSearch(word, max) {
@@ -132,9 +162,17 @@ export class ZhongwenDictionary {
                         maxLen = word.length;
                     }
 
-                    let known_word = this.vocabulary.includes(word);
+                    let known_status = 0 // Unknown word
 
-                    entry.data.push([dentry, word, known_word]);
+                    if (this.vocabulary.includes(word)) { // Vocab word
+                        known_status = 3
+                    } else if (this.backlog.includes(word)) { // Backlog word
+                        known_status = 2
+                    } else if ([...word].every(char => this.knownChars.includes(char))) { // Latent known word
+                        known_status = 1
+                    }
+
+                    entry.data.push([dentry, word, known_status]);
                 }
 
                 word = word.substr(0, word.length - 1);
